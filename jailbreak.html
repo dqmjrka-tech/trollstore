@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CMDJailBreak</title>
+  
+  <!-- Настройки PWA для iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CMDJailBreak">
+  <link rel="apple-touch-icon" href="/assets/logo.png">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      color: #fff;
+      overflow: hidden;
+      position: fixed;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      flex-direction: column;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Экраны блокировки (Не iOS / Не на экране Домой) */
+    .OverlayScreen {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 30px;
+      background: #0d0d0d;
+      z-index: 1000;
+    }
+
+    .OverlayScreen h2 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .OverlayScreen p {
+      color: #8e8e93;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .bypass-btn {
+      margin-top: 40px;
+      padding: 8px 14px;
+      background: #222;
+      color: #666;
+      border: 1px solid #333;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    /* 1. Главное приложение CMDJailBreak */
+    #jb-app-screen {
+      background: #111;
+      align-items: center;
+      justify-content: space-between;
+      padding: 60px 24px 50px;
+    }
+
+    .jb-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .jb-logo {
+      width: 96px;
+      height: 96px;
+      border-radius: 22px;
+      background: #222;
+      margin-bottom: 16px;
+      object-fit: cover;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .jb-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .jb-subtitle {
+      font-size: 12px;
+      color: #8e8e93;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .device-badge {
+      margin-top: 12px;
+      background: #1c1c1e;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #30d158;
+      border: 1px solid #2c2c2e;
+    }
+
+    .mini-console {
+      width: 100%;
+      height: 180px;
+      background: #000;
+      border: 1px solid #2c2c2e;
+      border-radius: 14px;
+      padding: 14px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 13px;
+      color: #30d158;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+
+    .jb-btn {
+      width: 100%;
+      padding: 16px;
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .jb-btn:disabled {
+      opacity: 0.5;
+    }
+
+    /* 2. Полноэкранный CMD */
+    #full-cmd-screen {
+      background: #000;
+      padding: 40px 16px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 14px;
+      color: #fff;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    /* 3. Экран загрузки (Respring) */
+    #respring-screen {
+      background: #000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .ios-spinner {
+      position: relative;
+      width: 36px;
+      height: 36px;
+    }
+
+    .ios-spinner div {
+      transform-origin: 18px 18px;
+      animation: ios-spin 1s linear infinite;
+    }
+
+    .ios-spinner div::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 2px;
+      left: 16.5px;
+      width: 3px;
+      height: 9px;
+      border-radius: 2px;
+      background: #fff;
+    }
+
+    .ios-spinner div:nth-child(1) { transform: rotate(0deg); animation-delay: -0.916s; }
+    .ios-spinner div:nth-child(2) { transform: rotate(30deg); animation-delay: -0.833s; }
+    .ios-spinner div:nth-child(3) { transform: rotate(60deg); animation-delay: -0.75s; }
+    .ios-spinner div:nth-child(4) { transform: rotate(90deg); animation-delay: -0.666s; }
+    .ios-spinner div:nth-child(5) { transform: rotate(120deg); animation-delay: -0.583s; }
+    .ios-spinner div:nth-child(6) { transform: rotate(150deg); animation-delay: -0.5s; }
+    .ios-spinner div:nth-child(7) { transform: rotate(180deg); animation-delay: -0.416s; }
+    .ios-spinner div:nth-child(8) { transform: rotate(210deg); animation-delay: -0.333s; }
+    .ios-spinner div:nth-child(9) { transform: rotate(240deg); animation-delay: -0.25s; }
+    .ios-spinner div:nth-child(10) { transform: rotate(270deg); animation-delay: -0.166s; }
+    .ios-spinner div:nth-child(11) { transform: rotate(300deg); animation-delay: -0.083s; }
+    .ios-spinner div:nth-child(12) { transform: rotate(330deg); animation-delay: 0s; }
+
+    @keyframes ios-spin {
+      0% { opacity: 1; }
+      100% { opacity: 0.15; }
+    }
+
+    /* 4. iOS Рабочий стол */
+    #ios-homescreen {
+      background: radial-gradient(circle at 50% 0%, #c8b4ba 0%, #3a3554 28%, #05050a 65%, #103c4e 100%);
+      justify-content: space-between;
+      animation: zoomOpen 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes zoomOpen {
+      0% { transform: scale(1.15); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Статус бар */
+    .status-bar {
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 26px;
+      font-size: 15px;
+      font-weight: 600;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .battery-pill {
+      background: #34c759;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 6px;
+    }
+
+    /* Сетка приложений */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px 12px;
+      padding: 25px 22px;
+      flex: 1;
+      align-content: start;
+    }
+
+    .app-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .app-item:active {
+      filter: brightness(0.7);
+    }
+
+    .app-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: #222;
+      margin-bottom: 5px;
+    }
+
+    .app-label {
+      font-size: 11px;
+      color: #fff;
+      text-align: center;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      max-width: 72px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Поиск и Док */
+    .home-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 18px;
+    }
+
+    .search-pill {
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      margin-bottom: 18px;
+      color: #fff;
+    }
+
+    .ios-dock {
+      width: calc(100% - 28px);
+      background: rgba(255,255,255,0.22);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-radius: 32px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .dock-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 30px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .badge-47 {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #ff3b30;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+
+    /* Приложения внутри iOS */
+    .ios-app {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      animation: appOpen 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .ios-app.open {
+      display: flex;
+    }
+
+    @keyframes appOpen {
+      0% { transform: scale(0.88); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Полоска выхода (не в самом низу, чтобы не задеть системный свайп браузера) */
+    .home-bar-container {
+      position: absolute;
+      bottom: 34px;
+      left: 0;
+      width: 100%;
+      height: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      cursor: pointer;
+    }
+
+    .home-bar {
+      width: 136px;
+      height: 5px;
+      background: #fff;
+      border-radius: 3px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Приложение 1: Sileo */
+    #app-sileo {
+      background: #121214;
+    }
+
+    .sileo-top {
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #222;
+    }
+
+    .sileo-top h1 {
+      font-size: 20px;
+      font-weight: 700;
+      flex: 1;
+      text-align: center;
+      margin-left: 34px;
+    }
+
+    .sileo-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+    }
+
+    #sileo-search-bar {
+      display: none;
+      padding: 10px 16px;
+      background: #1c1c1e;
+    }
+
+    #sileo-search-bar input {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: none;
+      background: #2c2c2e;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .sileo-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 120px;
+    }
+
+    .tweak-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #242426;
+    }
+
+    .tweak-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      margin-right: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .tweak-meta {
+      flex: 1;
+    }
+
+    .tweak-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tweak-author {
+      font-size: 13px;
+      color: #8e8e93;
+      margin-top: 2px;
+    }
+
+    .tweak-repo {
+      font-size: 12px;
+      color: #636366;
+      margin-top: 2px;
+    }
+
+    .tweak-price {
+      background: #2dbdc6;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 7px 16px;
+      border-radius: 18px;
+    }
+
+    .sileo-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .sileo-btn-box {
+      background: #242426;
+      color: #2dbdc6;
+      text-align: center;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .sileo-btn-support {
+      grid-column: span 2;
+    }
+
+    .sileo-footer-info {
+      text-align: center;
+      color: #8e8e93;
+      font-size: 12px;
+      margin-top: 18px;
+      line-height: 1.4;
+    }
+
+    .sileo-tabbar {
+      position: absolute;
+      bottom: 58px;
+      left: 0;
+      width: 100%;
+      height: 54px;
+      background: rgba(22, 22, 24, 0.95);
+      border-top: 1px solid #2c2c2e;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: 4px;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 10px;
+      color: #8e8e93;
+      cursor: pointer;
+    }
+
+    .tab-item.active {
+      color: #2dbdc6;
+    }
+
+    .tab-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    /* Приложение 2: Камера */
+    #app-camera {
+      background: #000;
+      justify-content: space-between;
+    }
+
+    .cam-top-bar {
+      padding: 12px 20px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .cam-DynamicIsland {
+      width: 110px;
+      height: 30px;
+      background: #000;
+      border-radius: 20px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 18px;
+      border: 1px solid #1a1a1a;
+    }
+
+    .green-dot {
+      width: 6px;
+      height: 6px;
+      background: #30d158;
+      border-radius: 50%;
+    }
+
+    .cam-controls-pill {
+      background: #1c1c1e;
+      padding: 6px 12px;
+      border-radius: 18px;
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .cam-viewfinder {
+      flex: 1;
+      position: relative;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    #camera-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    #camera-msg {
+      color: #ff453a;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .zoom-bar {
+      position: absolute;
+      bottom: 14px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      background: rgba(0,0,0,0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+
+    .zoom-active {
+      background: rgba(255,255,255,0.2);
+      color: #ffd60a;
+      padding: 4px 7px;
+      border-radius: 50%;
+      font-weight: 700;
+    }
+
+    .cam-bottom {
+      height: 170px;
+      padding-bottom: 65px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shutter-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .cam-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #333;
+    }
+
+    .shutter-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .shutter-inner {
+      width: 54px;
+      height: 54px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    .cam-flip {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #1c1c1e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+    }
+
+    .cam-modes {
+      display: flex;
+      gap: 16px;
+      background: #1c1c1e;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .mode-active {
+      color: #ffd60a;
+    }
+
+    /* Приложение 3: Настройки */
+    #app-settings {
+      background: #000;
+    }
+
+    .settings-body {
+      padding: 16px;
+      flex: 1;
+    }
+
+    .settings-header {
+      font-size: 30px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .settings-card {
+      background: #1c1c1e;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .apple-id-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #5e5ce6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .settings-list {
+      background: #1c1c1e;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #2c2c2e;
+      font-size: 16px;
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    .allow-cam-btn {
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Блокировка: ПК или Android -->
+  <div id="block-device" class="screen OverlayScreen">
+    <h2>Нельзя войти</h2>
+    <p>Это приложение доступно только на устройствах iPhone (iOS).</p>
+    <button class="bypass-btn" onclick="bypassChecks()">[Тест: Пропустить проверку]</button>
+  </div>
+
+  <!-- Блокировка: Открыто в браузере, а не через "На экран Домой" -->
+  <div id="block-pwa" class="screen OverlayScreen">
+    <h2>Добавьте на экран «Домой»</h2>
+    <p>Нажмите «Поделиться» внизу браузера и выберите <b>«На экран "Домой"»</b>, чтобы открыть приложение.</p>
+    <button class="bypass-btn" onclick="bypassChecks()">[Тест: Пропустить проверку]</button>
+  </div>
+
+  <!-- 1. Главное окно CMDJailBreak -->
+  <div id="jb-app-screen" class="screen">
+    <div class="jb-header">
+      <img src="/assets/logo.png" alt="Logo" class="jb-logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/f/fb/Icon_Sileo.png'">
+      <div class="jb-title">CMDJailBreak</div>
+      <div class="jb-subtitle">BETA 18-27 iOS</div>
+      <div id="detected-device-label" class="device-badge">Определение...</div>
+    </div>
+
+    <div id="mini-console" class="mini-console">
+      <div>> Система готова к тест-инъекции...</div>
+    </div>
+
+    <button id="jb-start-btn" class="jb-btn" onclick="startJailbreak()">Jailbreak</button>
+  </div>
+
+  <!-- 2. Чёрный экран паузы -->
+  <div id="black-screen" class="screen" style="background:#000;"></div>
+
+  <!-- 3. Полноэкранный CMD -->
+  <div id="full-cmd-screen" class="screen"></div>
+
+  <!-- 4. Загрузка iOS (Respring) -->
+  <div id="respring-screen" class="screen">
+    <div class="ios-spinner">
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+      <div></div><div></div><div></div><div></div><div></div><div></div>
+    </div>
+  </div>
+
+  <!-- 5. Копия iOS (Рабочий стол) -->
+  <div id="ios-homescreen" class="screen">
+    <div class="status-bar">
+      <div class="clock-text">18:06</div>
+      <div class="status-right">
+        <span>📶</span>
+        <span>🛜</span>
+        <span class="battery-pill">79⚡</span>
+      </div>
+    </div>
+
+    <div class="app-grid">
+      <!-- 1. Sileo -->
+      <div class="app-item" onclick="openApp('app-sileo')">
+        <img class="app-icon" src="https://upload.wikimedia.org/wikipedia/commons/f/fb/Icon_Sileo.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original" alt="Sileo">
+        <span class="app-label">Sileo</span>
+      </div>
+
+      <!-- 2. Camera -->
+      <div class="app-item" onclick="openApp('app-camera')">
+        <img class="app-icon" src="https://cdn.jim-nielsen.com/ios/512/camera-2025-10-20.png?rf=1024" alt="Camera">
+        <span class="app-label">Camera</span>
+      </div>
+
+      <!-- 3. Settings -->
+      <div class="app-item" onclick="openApp('app-settings')">
+        <img class="app-icon" src="https://cdn.iconscout.com/icon/free/png-256/free-apple-settings-icon-svg-download-png-493162.png?f=webp" alt="Settings">
+        <span class="app-label">Settings</span>
+      </div>
+
+      <!-- 4. Exit from default iOS -->
+      <div class="app-item" onclick="exitDefaultIOS()">
+        <div class="app-icon" style="background:#ff3b30; display:flex; justify-content:center; align-items:center; font-weight:bold; font-size:22px;">✕</div>
+        <span class="app-label">Exit from default iOS</span>
+      </div>
+    </div>
+
+    <div class="home-bottom">
+      <div class="search-pill">🔍 Поиск</div>
+      <div class="ios-dock">
+        <div class="dock-icon" style="background:#30d158;">📞</div>
+        <div class="dock-icon" style="background:#fff; color:#0a84ff;">🧭</div>
+        <div class="dock-icon" style="background:#30d158;">
+          💬
+          <span class="badge-47">47</span>
+        </div>
+        <div class="dock-icon" onclick="openApp('app-camera')">
+          <img src="https://cdn.jim-nielsen.com/ios/512/camera-2025-10-20.png?rf=1024" style="width:100%; height:100%; border-radius:14px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- ПРИЛОЖЕНИЕ: SILEO -->
+    <div id="app-sileo" class="ios-app">
+      <div class="status-bar">
+        <div class="clock-text">10:55</div>
+        <div class="status-right">
+          <span>📶</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <div class="sileo-top">
+        <h1>Featured</h1>
+        <div class="sileo-avatar">👻</div>
+      </div>
+
+      <!-- Скрытое поле ввода Search -->
+      <div id="sileo-search-bar">
+        <input type="text" id="sileo-search-input" placeholder="Search packages...">
+      </div>
+
+      <div class="sileo-content">
+        <div class="tweak-row">
+          <div class="tweak-icon" style="background:#1c2b36;">[e]</div>
+          <div class="tweak-meta">
+            <div class="tweak-title">Legizmo 'Kincaid'</div>
+            <div class="tweak-author">lunotech11</div>
+            <div class="tweak-repo">4.2.5 · Chariz</div>
+          </div>
+          <div class="tweak-price">$4.99</div>
+        </div>
+
+        <div class="tweak-row">
+          <div class="tweak-icon" style="background:#266b78;">09:41</div>
+          <div class="tweak-meta">
+            <div class="tweak-title">LastLook</div>
+            <div class="tweak-author">AnthoPak</div>
+            <div class="tweak-repo">3.6.5 · Chariz</div>
+          </div>
+          <div class="tweak-price">$2.99</div>
+        </div>
+
+        <div class="tweak-row">
+          <div class="tweak-icon" style="background:#fff; color:#a200ff; font-size:24px;">∞</div>
+          <div class="tweak-meta">
+            <div class="tweak-title">CarBridge</div>
+            <div class="tweak-author">leftyfl1p</div>
+            <div class="tweak-repo">2.0.12 · Havoc</div>
+          </div>
+          <div class="tweak-price">$9.99</div>
+        </div>
+
+        <div class="tweak-row">
+          <div class="tweak-icon" style="background:#fff; color:#ff9500; font-size:22px;">🏗️</div>
+          <div class="tweak-meta">
+            <div class="tweak-title">Crane</div>
+            <div class="tweak-author">opa334</div>
+            <div class="tweak-repo">1.3.14 · Havoc</div>
+          </div>
+          <div class="tweak-price">$4.99</div>
+        </div>
+
+        <div class="tweak-row">
+          <div class="tweak-icon" style="background:#000; border:1px solid #333;">⌨️</div>
+          <div class="tweak-meta">
+            <div class="tweak-title">SwipeExtenderX</div>
+            <div class="tweak-author">qwertyuiop1379</div>
+            <div class="tweak-repo">1.6.1~2 · Chariz</div>
+          </div>
+          <div class="tweak-price">GET</div>
+        </div>
+
+        <div class="sileo-buttons">
+          <div class="sileo-btn-box">Twitter</div>
+          <div class="sileo-btn-box">Website</div>
+          <div class="sileo-btn-box sileo-btn-support">Support</div>
+        </div>
+
+        <div class="sileo-footer-info" id="sileo-footer-device">
+          iPhone12,8, iOS 17.0, Sileo 2.5<br>
+          palera1n (iPadOS 17) | Procursus
+        </div>
+      </div>
+
+      <div class="sileo-tabbar">
+        <div class="tab-item active" onclick="toggleSileoSearch(false)">
+          <span class="tab-icon">★</span>
+          <span>Featured</span>
+        </div>
+        <div class="tab-item" onclick="toggleSileoSearch(false)">
+          <span class="tab-icon">📰</span>
+          <span>New</span>
+        </div>
+        <div class="tab-item" onclick="toggleSileoSearch(false)">
+          <span class="tab-icon">🌐</span>
+          <span>Sources</span>
+        </div>
+        <div class="tab-item" onclick="toggleSileoSearch(false)">
+          <span class="tab-icon">📦</span>
+          <span>Packages</span>
+        </div>
+        <div class="tab-item" id="sileo-search-tab" onclick="toggleSileoSearch(true)">
+          <span class="tab-icon">🔍</span>
+          <span>Search</span>
+        </div>
+      </div>
+
+      <!-- Полоска для выхода из приложения -->
+      <div class="home-bar-container" onclick="closeAllApps()">
+        <div class="home-bar"></div>
+      </div>
+    </div>
+
+    <!-- ПРИЛОЖЕНИЕ: КАМЕРА -->
+    <div id="app-camera" class="ios-app">
+      <div class="cam-DynamicIsland">
+        <div class="green-dot"></div>
+      </div>
+
+      <div class="cam-top-bar">
+        <div class="cam-controls-pill">
+          <span>🌙</span>
+          <span>⚡</span>
+          <span>◎</span>
+          <span>⠿</span>
+        </div>
+      </div>
+
+      <div class="cam-viewfinder">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <div id="camera-msg">Разрешите камеру в настройках!</div>
+
+        <div class="zoom-bar">
+          <span>0,5</span>
+          <span class="zoom-active">1x</span>
+          <span>2</span>
+          <span>3</span>
+        </div>
+      </div>
+
+      <div class="cam-bottom">
+        <div class="shutter-row">
+          <div class="cam-thumb"></div>
+          <div class="shutter-btn"><div class="shutter-inner"></div></div>
+          <div class="cam-flip">🔄</div>
+        </div>
+        <div class="cam-modes">
+          <span>ВИДЕО</span>
+          <span class="mode-active">ФОТО</span>
+        </div>
+      </div>
+
+      <div class="home-bar-container" onclick="closeAllApps()">
+        <div class="home-bar"></div>
+      </div>
+    </div>
+
+    <!-- ПРИЛОЖЕНИЕ: НАСТРОЙКИ -->
+    <div id="app-settings" class="ios-app">
+      <div class="status-bar">
+        <div class="clock-text">18:06</div>
+        <div class="status-right"><span>📶</span><span>🔋</span></div>
+      </div>
+
+      <div class="settings-body">
+        <div class="settings-header">Настройки</div>
+
+        <!-- Заглушка Apple ID -->
+        <div class="settings-card">
+          <div class="apple-id-avatar"></div>
+          <div>
+            <div style="font-size:18px; font-weight:600;">Apple ID</div>
+            <div style="font-size:13px; color:#8e8e93; margin-top:2px;">iCloud, Контент и покупки</div>
+          </div>
+        </div>
+
+        <!-- Wi-Fi и разрешение камеры -->
+        <div class="settings-list">
+          <div class="settings-row">
+            <span>🛜 Wi-Fi</span>
+            <span style="color:#8e8e93;">Подключено</span>
+          </div>
+          <div class="settings-row">
+            <span>📷 Доступ к камере</span>
+            <button id="allow-cam-btn" class="allow-cam-btn" onclick="requestCameraPermission()">Allow camera</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-bar-container" onclick="closeAllApps()">
+        <div class="home-bar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let detectedModel = "iPhone";
+    let detectedIOS = "17.0";
+    let cameraAllowed = false;
+    let cameraStream = null;
+
+    // Определение модели iPhone по разрешению экрана и User-Agent
+    function detectDeviceInfo() {
+      const ua = navigator.userAgent;
+      const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+      // Извлекаем версию iOS
+      const match = ua.match(/OS (\d+)_(\d+)_?(\d+)?/);
+      if (match) {
+        detectedIOS = `${match[1]}.${match[2]}${match[3] ? '.' + match[3] : ''}`;
+      }
+
+      // Определяем примерную модель по высоте и ширине в логических пикселях
+      const w = window.screen.width;
+      const h = window.screen.height;
+      if ((w === 430 && h === 932) || (w === 440 && h === 956)) detectedModel = "iPhone 15/16 Pro Max";
+      else if ((w === 393 && h === 852) || (w === 402 && h === 874)) detectedModel = "iPhone 15/16 Pro";
+      else if (w === 390 && h === 844) detectedModel = "iPhone 13 / 14";
+      else if (w === 428 && h === 926) detectedModel = "iPhone 13/14 Pro Max";
+      else if (w === 375 && h === 812) detectedModel = "iPhone X / 11 Pro / 12 mini";
+      else if (w === 414 && h === 896) detectedModel = "iPhone 11 / XR / XS Max";
+      else if (w === 375 && h === 667) detectedModel = "iPhone SE / 8";
+      else detectedModel = "iPhone";
+
+      document.getElementById('detected-device-label').innerText = `${detectedModel} • iOS ${detectedIOS}`;
+      document.getElementById('sileo-footer-device').innerHTML = `${detectedModel}, iOS ${detectedIOS}, Sileo 2.5<br>palera1n (iOS ${detectedIOS}) | Procursus`;
+
+      // Проверка режима PWA (На экран Домой)
+      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+      if (!isIOS) {
+        showScreen('block-device');
+      } else if (!isStandalone) {
+        showScreen('block-pwa');
+      } else {
+        showScreen('jb-app-screen');
+      }
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function bypassChecks() {
+      showScreen('jb-app-screen');
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function startJailbreak() {
+      const btn = document.getElementById('jb-start-btn');
+      const mini = document.getElementById('mini-console');
+      btn.disabled = true;
+      mini.innerHTML = "";
+
+      const logMini = (txt) => {
+        const line = document.createElement('div');
+        line.textContent = txt;
+        mini.appendChild(line);
+        mini.scrollTop = mini.scrollHeight;
+      };
+
+      // 5 попыток за ~2.5 сек (до 3 секунд)
+      for (let i = 1; i <= 5; i++) {
+        logMini(`Test jailbreak, attempt ${i}`);
+        await sleep(500);
+      }
+
+      logMini(`Ready! Jailbreak for:`);
+      await sleep(600);
+      logMini(`3...`);
+      await sleep(600);
+      logMini(`2...`);
+      await sleep(600);
+      logMini(`1...`);
+      await sleep(600);
+      logMini(`Jailbreaked...`);
+      await sleep(500);
+
+      // Экран тухнет на 2 секунды
+      showScreen('black-screen');
+      await sleep(2000);
+
+      // На весь экран настоящая CMD
+      showScreen('full-cmd-screen');
+      const cmd = document.getElementById('full-cmd-screen');
+      cmd.innerHTML = "";
+
+      const logCmd = (txt) => {
+        const line = document.createElement('div');
+        line.textContent = txt;
+        cmd.appendChild(line);
+        cmd.scrollTop = cmd.scrollHeight;
+      };
+
+      logCmd(`${detectedModel}`);
+      await sleep(500);
+
+      logCmd(`iOS ${detectedIOS}`);
+      await sleep(500);
+
+      const realW = Math.round(window.screen.width * window.devicePixelRatio);
+      const realH = Math.round(window.screen.height * window.devicePixelRatio);
+      logCmd(`${realH}x${realW}`);
+
+      // Проценты: с 1% до 20% по 0.3 сек, далее до 100% по 0.5 сек
+      for (let p = 1; p <= 100; p++) {
+        logCmd(`Jailbreak ${p}%`);
+        if (p < 20) {
+          await sleep(300);
+        } else {
+          await sleep(500);
+        }
+      }
+
+      // Загрузка как на 1 фото около 2 секунд
+      showScreen('respring-screen');
+      await sleep(2000);
+
+      // Открытие копии iOS
+      showScreen('ios-homescreen');
+    }
+
+    // Управление приложениями внутри копии iOS
+    function openApp(appId) {
+      closeAllApps();
+      document.getElementById(appId).classList.add('open');
+      if (appId === 'app-camera') {
+        initCameraView();
+      }
+    }
+
+    function closeAllApps() {
+      document.querySelectorAll('.ios-app').forEach(app => app.classList.remove('open'));
+    }
+
+    function exitDefaultIOS() {
+      closeAllApps();
+      document.getElementById('jb-start-btn').disabled = false;
+      showScreen('jb-app-screen');
+    }
+
+    // Поиск в Sileo
+    function toggleSileoSearch(show) {
+      const bar = document.getElementById('sileo-search-bar');
+      const tabs = document.querySelectorAll('.sileo-tabbar .tab-item');
+      tabs.forEach(t => t.classList.remove('active'));
+
+      if (show) {
+        bar.style.display = 'block';
+        document.getElementById('sileo-search-tab').classList.add('active');
+        document.getElementById('sileo-search-input').focus();
+      } else {
+        bar.style.display = 'none';
+        tabs[0].classList.add('active');
+      }
+    }
+
+    // Запрос камеры в Настройках и открытие в приложении Камера
+    async function requestCameraPermission() {
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        cameraAllowed = true;
+        const btn = document.getElementById('allow-cam-btn');
+        btn.textContent = "Allowed ✓";
+        btn.style.background = "#30d158";
+      } catch (err) {
+        alert("Доступ к камере отклонён браузером или недоступен.");
+      }
+    }
+
+    async function initCameraView() {
+      const video = document.getElementById('camera-video');
+      const msg = document.getElementById('camera-msg');
+
+      if (!cameraAllowed) {
+        video.style.display = 'none';
+        msg.style.display = 'block';
+      } else {
+        msg.style.display = 'none';
+        video.style.display = 'block';
+        if (!cameraStream) {
+          try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'environment' },
+              audio: false
+            });
+          } catch (e) {}
+        }
+        if (cameraStream) {
+          video.srcObject = cameraStream;
+        }
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', detectDeviceInfo);
+  </script>
+</body>
+</html>
